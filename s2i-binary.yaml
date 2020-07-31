@@ -1,0 +1,73 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: s2i-java-binary-build
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/tags: image-build, java
+
+spec:
+  description: >-
+    Source-to-Image (S2I) is a toolkit and workflow for building reproducible
+    container images from source code
+
+    S2I produces images by injecting source code into a base S2I container image
+    and letting the container prepare that source code for execution. The base
+    S2I container images contains the language runtime and build tools needed for
+    building and running the source code.
+
+  workspaces:
+  - name: binary
+  params:
+    - name: BUILD_NAME
+      type: string
+      description: Name to use for generated build artifacts.
+      default: java-binary-build
+    - name: PATH_TYPE
+      type: string
+      description: ""
+    - name: BINARY_PATH
+      type: string
+      description: ""
+  results:
+    - name: image-url
+      description: ""
+  steps:
+    - name: image-build
+      image: quay.io/openshift/origin-cli:latest
+      workingDir: $(workspaces.binary.path)/"$(params.BINARY_PATH)"
+      script: |
+        #!/usr/bin/env bash
+       
+        file_path="$(params.BINARY_PATH)"
+        # Case-insensitive comparison for PATH_TYPE with respective path types. 
+        if [[ $(echo "$(params.PATH_TYPE)" |tr [:upper:] [:lower:]) = "directory" ]]; then
+            path_type="--from-dir"
+
+        elif [[ $(echo "$(params.PATH_TYPE)" |tr [:upper:] [:lower:]) = "file" ]]; then
+            path_type="--from-file"
+            file_path=$(find -type f -name "*.jar")
+
+        elif [[ $(echo "$(params.PATH_TYPE)" |tr [:upper:] [:lower:]) = "archive" ]]; then
+            path_type="--from-archive"
+
+        elif [[ $(echo "$(params.PATH_TYPE)" |tr [:upper:] [:lower:]) = "repository" ]]; then
+            path_type="--from-dir"
+        fi
+
+        # Generate the build configuration
+        # oc new-build java --name="$(params.BUILD_NAME)" --binary=true
+        oc new-build java --name=java-binary-build12 --binary=true
+
+        # Trigger Build
+        echo "path -- >"$path
+        # oc start-build bc/"$(params.BUILD_NAME)" $path=$file_path --follow
+        # oc start-build bc/java-binary-build12 --from-file="./target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar" --follow
+
+        # Get the pushed image URL
+        PUSHED_IMAGE_URL=$(oc get is $(params.BUILD_NAME) --template='{{.status.dockerImageRepository}}')
+
+        # Make sure we don't add a trailing newline to the result!
+        echo -n "$PUSHED_IMAGE_URL" > $(results.image-url.path)

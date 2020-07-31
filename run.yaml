@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  generateName: s2i-java-binary-build-run-
+spec:
+  taskRef:
+    name: s2i-java-binary-build
+  params:
+  - name: BUILD_NAME
+    value: java-binary-build8
+  - name: PATH_TYPE
+    value: File
+  - name: BINARY_PATH
+    value: https://github.com/Divyansh42/spring-petclinic/blob/main/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar
+  workspaces:
+  - name: binary
+    emptyDir: {}

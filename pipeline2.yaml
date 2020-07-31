@@ -1,0 +1,38 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: s2i-test-pipeline
+spec:
+  workspaces:
+    - name: shared-workspace
+    - name: images-url
+  tasks:
+    - name: s2i-java-binary-build
+      taskRef:
+        name: s2i-java-binary-build
+      workspaces:
+        - name: binary
+          workspace: shared-workspace
+      params:
+      - name: BUILD_NAME
+        value: java-binary-build13
+      - name: PATH_TYPE
+        value: File
+      - name: BINARY_PATH
+        value: target
+    - name: copy-image
+      taskRef:
+        name: skopeo-copy
+      runAfter:
+        - s2i-java-binary-build
+      workspaces:
+        - name: images-url
+          workspace: images-url
+      params:
+      - name: srcImageURL
+        value: docker://$(tasks.s2i-java-binary-build.results.image-url)
+      - name: destImageURL
+        value: docker://quay.io/diagarwa/java-binary-build:v1
+      - name: destTLSverify
+        value: "false"

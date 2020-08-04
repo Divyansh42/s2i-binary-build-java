@@ -16,7 +16,7 @@ spec:
           workspace: shared-workspace
       params:
       - name: BUILD_NAME
-        value: java-binary-build13
+        value: java-binary-build12
       - name: PATH_TYPE
         value: File
       - name: BINARY_PATH

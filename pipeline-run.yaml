@@ -6,7 +6,7 @@ metadata:
 spec:
   pipelineRef:
     name: maven-test-pipeline
-  serviceAccountName: secret-service-account
+  # serviceAccountName: secret-service-account
   workspaces:
     - name: maven-settings
       emptyDir: {}
